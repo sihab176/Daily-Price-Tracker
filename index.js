@@ -16,7 +16,7 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.USER_PASS}@cluster0.dgbpvrt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 
@@ -49,7 +49,7 @@ async function run() {
         res.send(result)
      })
 
-     // !===================== PRODUCT ==================================>
+     //!===================== PRODUCT ==================================>
       app.post("/products", async (req, res) => {
        const product = req.body;
        const result = await productCollection.insertOne(product);
@@ -60,8 +60,8 @@ async function run() {
       //   const result= await productCollection.find().toArray()
       //   res.send(result)
       // })
-
-  app.get("/products", async (req, res) => {
+      //get all product =======>
+      app.get("/products", async (req, res) => {
   const { status, limit } = req.query;
   console.log(status, limit);
 
@@ -73,7 +73,22 @@ async function run() {
     .toArray(); // ✅ convert cursor to array
 
   res.send(result); // ✅ now it's pure JSON
+     });
+ // GET all products for a specific vendor
+      app.get("/products/vendor/:email", async (req, res) => {
+       const email = req.params.email;
+       const result = await productCollection.find({ vendorEmail: email }).toArray()
+       res.send(result);
 });
+
+// DELETE a product by ID
+    app.delete("/products/:id", async (req, res) => {
+       const id = req.params.id;
+       const query= { _id: new ObjectId(id) }
+ 
+       const result = await productCollection.deleteOne(query);
+       res.send(result);
+ });
 
 
 
