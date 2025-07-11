@@ -86,7 +86,7 @@ async function run() {
        res.send(result);
      });
 
-// UPDATE method vendors post 
+// UPDATE method vendors post=> 
  app.put("/vendors/:id", async (req, res) => {
      try {
         const id = req.params.id;
@@ -107,7 +107,7 @@ async function run() {
     console.log(error);
   }
 });
-// DELETE a product by ID
+// DELETE a product by ID=>
 app.delete("/products/:id", async (req, res) => {
        const id = req.params.id;
        const query= { _id: new ObjectId(id) }
@@ -116,20 +116,20 @@ app.delete("/products/:id", async (req, res) => {
        res.send(result);
  });
 // Todo: ADVERTISEMENT RELATED API ===============>
-// POST advertisements   
+// POST advertisements ===>  
 app.post("/advertisements", async (req, res) => {
   const ad = req.body;
   ad.status = "pending"; // just in case
   const result = await advertisementsCollection.insertOne(ad);
   res.send(result);
 });
-// GET advertisements 
+// GET advertisements ====>
  app.get("/advertisements", async (req, res) => {
   const email = req.query.vendor;
   const result = await advertisementsCollection.find({ vendorEmail: email }).toArray();
   res.send(result);
 });
-// UPDATE advertisements 
+// UPDATE advertisements =>
 app.put("/advertisements/:id", async (req, res) => {
   const { id } = req.params;
   const updated = req.body;
