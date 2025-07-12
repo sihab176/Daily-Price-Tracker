@@ -34,6 +34,7 @@ async function run() {
     const userCollection= db.collection('users')
     const productCollection= db.collection('product')
     const advertisementsCollection= db.collection('advertisement')
+    const reviewCollection=db.collection("reviews")
     
   try {
      await client.connect();
@@ -76,7 +77,13 @@ async function run() {
 
        res.send(result); // ✅ now it's pure JSON
      });
-
+  // product details 
+  app.get("/products/:id",async(req,res)=>{
+    const id = req.params.id
+    const query= {_id : new ObjectId(id)}
+    const result= await productCollection.findOne(query)
+    res.send(result)
+  })
 //! ============================ vendor =====================================>
 
  //  GET all products for a specific vendor
@@ -91,6 +98,8 @@ async function run() {
      try {
         const id = req.params.id;
         const updatedData = req.body;
+         delete updatedData._id;
+       
 
         const result = await productCollection.updateOne(
         { _id: new ObjectId(id) },
@@ -139,7 +148,33 @@ app.put("/advertisements/:id", async (req, res) => {
   );
   res.send(result);
 });
+// DELETE advertisements =====>
+  app.delete("/advertisements/:id", async (req,res)=>{
+    const id= req.params.id
+    const  query = {_id : new ObjectId(id)}
+    const result = await advertisementsCollection.deleteOne(query)
+    res.send(result)
+  })
+//! ============================== review collection =====================>
+  app.post("/reviews",async(req,res)=>{
+    const query = req.body
+    const result =await reviewCollection.insertOne(query)
+    res.send(result)
+  })
 
+
+app.get('/reviews/:productId', async (req, res) => {
+  const productId = req.params.productId;
+
+  try {
+    const query = { productId }; 
+    const result = await reviewCollection.find(query).sort({ date: -1 }).toArray();
+    res.send(result);
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    res.status(500).send({ error: "Internal Server Error" });
+  }
+});
 
 
 
