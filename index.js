@@ -35,6 +35,7 @@ async function run() {
     const productCollection= db.collection('product')
     const advertisementsCollection= db.collection('advertisement')
     const reviewCollection=db.collection("reviews")
+    const watchListCollection= db.collection("watchList")
     
   try {
      await client.connect();
@@ -63,7 +64,7 @@ async function run() {
       //   const result= await productCollection.find().toArray()
       //   res.send(result)
       // })
-  // get all product =======>
+  //! get all product =======>
     app.get("/products", async (req, res) => {
       const { status, limit } = req.query;
       // console.log(status, limit);
@@ -78,12 +79,34 @@ async function run() {
        res.send(result); // ✅ now it's pure JSON
      });
   // product details 
-  app.get("/products/:id",async(req,res)=>{
+     app.get("/products/:id",async(req,res)=>{
     const id = req.params.id
     const query= {_id : new ObjectId(id)}
     const result= await productCollection.findOne(query)
     res.send(result)
-  })
+     }) 
+
+   // get all product ===========>
+
+    app.get("/allProducts",async(req,res)=>{
+      const {status,sort,date} = req.query
+      const query = { status: status || "pending" };
+      const sortDate= sort === "desc"  ? 1 : -1
+      // query.data =date
+      const result = await productCollection.find(query).sort({date : sortDate}).toArray()
+      
+      // console.log(result ,"result");
+
+      if(date){
+         const filterResult= result.filter(singleData=> singleData.date == date )
+         return res.send(filterResult)
+       
+        
+      }
+      else{
+        return res.send(result)
+      }
+    })
 //! ============================ vendor =====================================>
 
  //  GET all products for a specific vendor
@@ -156,14 +179,14 @@ app.put("/advertisements/:id", async (req, res) => {
     res.send(result)
   })
 //! ============================== review collection =====================>
+// post reviews ======>
   app.post("/reviews",async(req,res)=>{
     const query = req.body
     const result =await reviewCollection.insertOne(query)
     res.send(result)
   })
-
-
-app.get('/reviews/:productId', async (req, res) => {
+// get reviews ========>
+ app.get('/reviews/:productId', async (req, res) => {
   const productId = req.params.productId;
 
   try {
@@ -176,6 +199,41 @@ app.get('/reviews/:productId', async (req, res) => {
   }
 });
 
+
+//  compare price with bar chart ==========>
+  app.get("/compare-price", async (req, res)=>{
+
+    const { productId, date } = req.query;
+     const product = await productCollection.findOne({ _id: new ObjectId(productId),  });
+     
+     const newProduct=product.prices
+     const findDate= newProduct.find(p=>p.date === date)
+    const today = new Date().toISOString().split("T")[0];
+    const findToCurrentDate= newProduct.find(p=>p.date === today)
+   console.log(today);
+    const findTheDate= findToCurrentDate ? findToCurrentDate :{ date: today, price: '0' }
+    
+    
+
+    if (!findDate) {
+      return res.status(404).send({ error: "Product not found" });
+    }
+    // console.log([findDate,findTheDate]);
+    res.send([findDate,findTheDate])
+  })
+
+// ! ============================== watch List ============================>
+// get  watch List
+app.get("/watchlist",async(req,res)=>{
+  const result= await watchListCollection.find().toArray()
+  res.send(result)
+})
+// post watch List
+app.post("/watchlist",async(req,res)=>{
+  const data= req.body
+  const result = await watchListCollection.insertOne(data)
+  res.send(result)
+})
 
 
 
