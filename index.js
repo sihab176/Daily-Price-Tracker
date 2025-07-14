@@ -223,15 +223,26 @@ app.put("/advertisements/:id", async (req, res) => {
   })
 
 // ! ============================== watch List ============================>
-// get  watch List
+// get  watch List ===========>
 app.get("/watchlist",async(req,res)=>{
-  const result= await watchListCollection.find().toArray()
+  const {email}= req.query
+ 
+  const result= await watchListCollection.find({userEmail:email}).toArray()
   res.send(result)
 })
-// post watch List
+
+// post watch List ============>
 app.post("/watchlist",async(req,res)=>{
-  const data= req.body
-  const result = await watchListCollection.insertOne(data)
+   const data= req.body
+  // console.log(data);
+   const query= data.productId
+  
+   const findData= await watchListCollection.findOne({productId :query})
+  
+    if(findData){
+   return res.status(200).send({message: "already exist"})
+ }
+const result = await watchListCollection.insertOne(data)
   res.send(result)
 })
 
