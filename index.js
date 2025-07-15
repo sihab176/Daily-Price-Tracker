@@ -154,7 +154,7 @@ app.patch("/admin/product/approve/:id", async (req, res) => {
   );
   res.send(result);
 });
-
+// Reject by admin
 app.patch("/admin/products/reject/:id",async(req,res)=>{
   const feedback= req.body
   const  result =await productCollection.updateOne(
@@ -165,11 +165,31 @@ app.patch("/admin/products/reject/:id",async(req,res)=>{
 res.send(result)
 })
 
-// Delete Product
+// Delete Product by admin 
 app.delete("/admin/products/:id", async (req, res) => {
   const result = await productCollection.deleteOne({ _id: new ObjectId(req.params.id) });
   res.send(result);
 });
+// Get all advertisement by admin 
+app.get("/admin/advertisement",async(req,res)=>{
+  const result= await advertisementsCollection.find().toArray()
+  res.send(result)
+})
+// advertisement delete by admin 
+app.delete("/admin/advertisement/:id",async(req,res)=>{
+  const id= req.params.id
+  const query= {_id : new ObjectId(id)}
+  const result =await advertisementsCollection.deleteOne(query)
+  res.send(result)
+})
+// advertisement status by admin
+app.patch("/admin/advertisement/status/:id",async(req,res)=>{
+  const result= await advertisementsCollection.updateOne(
+    {_id : new ObjectId(req.params.id)},
+    {$set : {status : "approved"}}
+  )
+  res.send(result)
+})
 
 
 
