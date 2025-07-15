@@ -119,7 +119,7 @@ app.patch("/users/:id", async (req, res) => {
     res.send(result)
      }) 
 
-   // get all product ==========>
+   // get all product ADMIN==========>
 
     app.get("/allProducts",async(req,res)=>{
       const {status,sort,date} = req.query
@@ -140,6 +140,37 @@ app.patch("/users/:id", async (req, res) => {
         return res.send(result)
       }
     })
+  //TODO : ===================== ADMIN ======================================>
+// Get all products (for admin)
+  app.get("/admin/allProduct", async (req, res) => {
+  const result = await productCollection.find().toArray();
+  res.send(result);
+});
+// Approve product
+app.patch("/admin/product/approve/:id", async (req, res) => {
+  const result = await productCollection.updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: { status: "approved" } }
+  );
+  res.send(result);
+});
+
+app.patch("/admin/products/reject/:id",async(req,res)=>{
+  const feedback= req.body
+  const  result =await productCollection.updateOne({_id : new ObjectId(req.params.id)},
+  {$set: {status : "rejected", rejectionFeedback : feedback}}
+  
+)
+res.send(result)
+})
+
+// Delete Product
+app.delete("/admin/products/:id", async (req, res) => {
+  const result = await productCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+  res.send(result);
+});
+
+
 //! ============================ vendor =====================================>
 
  //  GET all products for a specific vendor
