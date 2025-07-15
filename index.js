@@ -157,7 +157,8 @@ app.patch("/admin/product/approve/:id", async (req, res) => {
 
 app.patch("/admin/products/reject/:id",async(req,res)=>{
   const feedback= req.body
-  const  result =await productCollection.updateOne({_id : new ObjectId(req.params.id)},
+  const  result =await productCollection.updateOne(
+  {_id : new ObjectId(req.params.id)},
   {$set: {status : "rejected", rejectionFeedback : feedback}}
   
 )
@@ -169,6 +170,7 @@ app.delete("/admin/products/:id", async (req, res) => {
   const result = await productCollection.deleteOne({ _id: new ObjectId(req.params.id) });
   res.send(result);
 });
+
 
 
 //! ============================ vendor =====================================>
