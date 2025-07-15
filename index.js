@@ -40,7 +40,14 @@ async function run() {
   try {
      await client.connect();
 
-// !=========================== USER POST API =============================>
+// !=========================== USER  API ================================>
+  // user Get Api ===========>
+    app.get("/users",async(req,res)=>{
+      const result =await userCollection.find().toArray()
+      res.send(result)
+    })
+
+  // user Post Api ==========>
      app.post("/users",async(req,res)=>{
         const email= req.body.email
         const existingUser= await userCollection.findOne({email})
@@ -51,20 +58,46 @@ async function run() {
         const result= await userCollection.insertOne(user)
         res.send(result)
      })
+  // user update status =====>
+app.patch("/users/:id", async (req, res) => {
+  const id = req.params.id;
+  const { role } = req.body; 
+
+  // Validate input
+  if (!role || !["Admin", "Vendor", "user"].includes(role)) {
+    return res.status(400).json({ error: "Invalid role" });
+  }
+
+  try {
+    const result = await userCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          role: role,
+          last_updated: new Date() // Optional: Track when role was changed
+        }
+      }
+    );
+    
+
+   
+
+    res.status(200).json({ success: true, updatedRole: role });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 //!=========================== PRODUCT =====================================>
-  // post the product =====>
+  // post the product =========>
       app.post("/products", async (req, res) => {
        const product = req.body;
        const result = await productCollection.insertOne(product);
        res.send(result);
      });
-  // get product ==========>
-      // app.get("/products",async(req,res)=>{
-      //   const result= await productCollection.find().toArray()
-      //   res.send(result)
-      // })
-  //! get all product =======>
+
+  // get product ===============>
     app.get("/products", async (req, res) => {
       const { status, limit } = req.query;
       // console.log(status, limit);
@@ -73,12 +106,12 @@ async function run() {
       const result = await productCollection
       .find(query)
       .sort({ date: -1 })
-      .limit(parseInt(limit || "10")) // fallback value if limit not given
-      .toArray(); // ✅ convert cursor to array
+      .limit(parseInt(limit || "10")) 
+      .toArray(); 
 
-       res.send(result); // ✅ now it's pure JSON
+       res.send(result); 
      });
-  // product details 
+  // product details ===========>
      app.get("/products/:id",async(req,res)=>{
     const id = req.params.id
     const query= {_id : new ObjectId(id)}
@@ -86,14 +119,14 @@ async function run() {
     res.send(result)
      }) 
 
-   // get all product ===========>
+   // get all product ==========>
 
     app.get("/allProducts",async(req,res)=>{
       const {status,sort,date} = req.query
       const query = { status: status || "pending" };
       const sortDate= sort === "desc"  ? 1 : -1
       // query.data =date
-      const result = await productCollection.find(query).sort({date : sortDate}).toArray()
+      const result = await productCollection.find(query).sort({ pricePerUnit : sortDate}).toArray()
       
       // console.log(result ,"result");
 
@@ -147,7 +180,7 @@ app.delete("/products/:id", async (req, res) => {
        const result = await productCollection.deleteOne(query);
        res.send(result);
  });
-// Todo: ADVERTISEMENT RELATED API ===============>
+// Todo: ======================  ADVERTISEMENT RELATED API ===================>
 // POST advertisements ===>  
 app.post("/advertisements", async (req, res) => {
   const ad = req.body;
@@ -210,7 +243,7 @@ app.put("/advertisements/:id", async (req, res) => {
      const findDate= newProduct.find(p=>p.date === date)
     const today = new Date().toISOString().split("T")[0];
     const findToCurrentDate= newProduct.find(p=>p.date === today)
-   console.log(today);
+  //  console.log(today);
     const findTheDate= findToCurrentDate ? findToCurrentDate :{ date: today, price: '0' }
     
     
@@ -246,6 +279,12 @@ const result = await watchListCollection.insertOne(data)
   res.send(result)
 })
 
+app.delete("/watchlist/:id",async(req,res)=>{
+  const id = req.params.id
+  const query= {_id : new ObjectId(id)}
+  const result= await watchListCollection.deleteOne(query)
+  res.send(result)
+  })
 
 
 
