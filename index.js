@@ -59,7 +59,7 @@ async function run() {
         res.send(result)
      })
   // user update status =====>
-app.patch("/users/:id", async (req, res) => {
+    app.patch("/users/:id", async (req, res) => {
   const id = req.params.id;
   const { role } = req.body; 
 
@@ -87,8 +87,28 @@ app.patch("/users/:id", async (req, res) => {
     console.error("Update error:", error);
     res.status(500).json({ error: "Server error" });
   }
-});
+     });
+      //Get user role by email ================>
+   app.get('/users/:email/role', async (req, res) => {
+            try {
+                const email = req.params.email;
 
+                if (!email) {
+                    return res.status(400).send({ message: 'Email is required' });
+                }
+
+                const user = await userCollection.findOne({ email });
+
+                if (!user) {
+                    return res.status(404).send({ message: 'User not found' });
+                }
+
+                res.send({ role: user.role || 'user' });
+            } catch (error) {
+                console.error('Error getting user role:', error);
+                res.status(500).send({ message: 'Failed to get role' });
+            }
+        });
 //!=========================== PRODUCT =====================================>
   // post the product =========>
       app.post("/products", async (req, res) => {
@@ -98,11 +118,11 @@ app.patch("/users/:id", async (req, res) => {
      });
 
   // get product ===============>
-    app.get("/products", async (req, res) => {
+     app.get("/products", async (req, res) => {
       const { status, limit } = req.query;
       // console.log(status, limit);
 
-     const query = { status: status || "pending" };
+     const query = { status: status || "approved" };
       const result = await productCollection
       .find(query)
       .sort({ date: -1 })
@@ -119,11 +139,10 @@ app.patch("/users/:id", async (req, res) => {
     res.send(result)
      }) 
 
-   // get all product ADMIN==========>
-
+   // get all product ==========>
     app.get("/allProducts",async(req,res)=>{
       const {status,sort,date} = req.query
-      const query = { status: status || "pending" };
+      const query = { status: status || "approved" };
       const sortDate= sort === "desc"  ? 1 : -1
       // query.data =date
       const result = await productCollection.find(query).sort({ pricePerUnit : sortDate}).toArray()
@@ -262,6 +281,13 @@ app.put("/advertisements/:id", async (req, res) => {
     const id= req.params.id
     const  query = {_id : new ObjectId(id)}
     const result = await advertisementsCollection.deleteOne(query)
+    res.send(result)
+  })
+  // get all advertisement for home page 
+  app.get("/advertisements/all",async(req,res)=>{
+    const {status} = req.query
+    const query = { status: status || "approved" };
+    const result= await advertisementsCollection.find(query).toArray()
     res.send(result)
   })
 //! ============================== review collection =====================>
