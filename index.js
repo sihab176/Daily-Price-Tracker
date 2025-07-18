@@ -1,9 +1,10 @@
 const express=require('express')
 const cors=require('cors')
 require('dotenv').config()
-
 const port= process.env.PORT || 3000
 const app= express()
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe= require('stripe')(process.env.PAYMENT_GATEWAY_KEY)
 
 //middleware  
 app.use(cors())
@@ -16,7 +17,6 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.USER_PASS}@cluster0.dgbpvrt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 
@@ -35,7 +35,8 @@ async function run() {
     const productCollection= db.collection('product')
     const advertisementsCollection= db.collection('advertisement')
     const reviewCollection=db.collection("reviews")
-    const watchListCollection= db.collection("watchList")
+    const watchListCollection= db.collection("watchList") 
+    const paymentsCollection= db.collection("payments")
     
   try {
      await client.connect();
@@ -365,6 +366,52 @@ app.delete("/watchlist/:id",async(req,res)=>{
   res.send(result)
   })
 
+//TODO : =========================== PAYMENT=================================>
+
+// TODO : RECORD PAYMENT  
+app.post('/payments', async(req,res)=>{
+  try{
+    const {productId, email, amount,paymentMethod,transactionId}= req.body;
+
+    const paymentDoc={
+      productId,
+      email,
+      amount,
+      paymentMethod,
+      transactionId,
+      paid_at_string : new Date.toString() ,
+      paid_at : new Date(),
+    }
+
+   const paymentResult= await paymentsCollection.insertOne(paymentDoc)
+   res.status(201).send({
+    message: 'Payment recorded and parcel marked as paid',
+    insertedId: paymentResult.insertedId,
+     });
+
+  }catch(error) {
+        console.error('Payment processing failed:', error);
+        res.status(500).send({ message: 'Failed to record payment' });
+    }
+})
+
+
+// TODO : STRIPE PAYMENT INTENT 
+app.post('/create-payment-intent',async(req,res)=>{
+  const amountInCents =req.body.amountInCents
+
+    try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents, // Amount in cents
+      currency: 'usd',
+      payment_method_types: ['card'],
+    });
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch(error){
+     res.status(500).json({error : error.message})
+  }
+})
 
 
 // todo: =================================================================================================>
