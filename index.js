@@ -368,18 +368,34 @@ app.delete("/watchlist/:id",async(req,res)=>{
 
 //TODO : =========================== PAYMENT=================================>
 
+// TODO : GET PAYMENTS 
+app.get("/myProducts",async(req,res)=>{
+  try{
+    const userEmail = req.query.email
+   const query = userEmail ? { email: userEmail } : {};
+   const options = { sort: { paid_at: -1 } };
+   const payments = await paymentsCollection.find(query,options).toArray()
+   res.send(payments)
+  }catch(error){
+    console.log(error);
+  }
+}) 
+
+
 // TODO : RECORD PAYMENT  
 app.post('/payments', async(req,res)=>{
   try{
-    const {productId, email, amount,paymentMethod,transactionId}= req.body;
+    const {productId, email, amount,paymentMethod,transactionId ,marketName,itemName}= req.body;
 
     const paymentDoc={
       productId,
+      marketName,
+      itemName,
       email,
       amount,
       paymentMethod,
       transactionId,
-      paid_at_string : new Date.toString() ,
+      paid_at_string : new Date().toISOString() ,
       paid_at : new Date(),
     }
 
