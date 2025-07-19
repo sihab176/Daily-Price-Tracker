@@ -77,7 +77,12 @@ async function run() {
 // !=========================== USER  API ================================>
   // user Get Api ===========>
     app.get("/users",async(req,res)=>{
-      const result =await userCollection.find().toArray()
+      const {searchParams}= req.query
+      let query ={}
+      if(searchParams){
+        query= {email : {$regex : searchParams , $options : "i"}}
+      }
+      const result =await userCollection.find(query).toArray()
       res.send(result)
     })
 
