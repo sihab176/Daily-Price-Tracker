@@ -10,7 +10,29 @@ const stripe= require('stripe')(process.env.PAYMENT_GATEWAY_KEY)
 app.use(cors())
 app.use(express.json())
 
+const jwt = require('jsonwebtoken');
+// console.log(process.env.JWT_SECRET);
 
+  const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    // console.log(authHeader ," auth" , req.body);
+    // next();
+    if (!authHeader) {
+      return res.status(401).send({ message: 'Unauthorized access - no token' });
+     }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+       return res.status(403).send({ message: 'Forbidden access - invalid token' });
+     }
+
+    req.decoded = decoded; 
+    next();
+  });
+ 
+};
 
 
 
@@ -40,6 +62,17 @@ async function run() {
     
   try {
      await client.connect();
+
+     // jwt route
+  app.post('/jwt', async (req, res) => {
+       const { email } = req.body;
+      
+       const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+       expiresIn: '7d', 
+  });
+
+  res.send({ token });
+})
 
 // !=========================== USER  API ================================>
   // user Get Api ===========>
@@ -93,6 +126,7 @@ async function run() {
    app.get('/users/:email/role', async (req, res) => {
             try {
                 const email = req.params.email;
+                
 
                 if (!email) {
                     return res.status(400).send({ message: 'Email is required' });
@@ -216,8 +250,13 @@ app.patch("/admin/advertisement/status/:id",async(req,res)=>{
 //! ============================ vendor =====================================>
 
  //  GET all products for a specific vendor
- app.get("/products/vendor/:email", async (req, res) => {
+ app.get("/products/vendor/:email",verifyToken, async (req, res) => {
+      
        const email = req.params.email;
+      //  console.log(req.decoded.email ," email verify",email);
+       if(email!==req.decoded.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
        const result = await productCollection.find({ vendorEmail: email }).toArray()
        res.send(result);
      });
@@ -262,8 +301,11 @@ app.post("/advertisements", async (req, res) => {
   res.send(result);
 });
 // GET advertisements ====>
- app.get("/advertisements", async (req, res) => {
+ app.get("/advertisements",verifyToken, async (req, res) => {
   const email = req.query.vendor;
+     if(email!==req.decoded.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
   const result = await advertisementsCollection.find({ vendorEmail: email }).toArray();
   res.send(result);
 });
@@ -369,9 +411,12 @@ app.delete("/watchlist/:id",async(req,res)=>{
 //TODO : =========================== PAYMENT=================================>
 
 // TODO : GET PAYMENTS 
-app.get("/myProducts",async(req,res)=>{
+app.get("/myProducts",verifyToken, async(req,res)=>{
   try{
-    const userEmail = req.query.email
+  const userEmail = req.query.email
+     if(userEmail !==req.decoded.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
    const query = userEmail ? { email: userEmail } : {};
    const options = { sort: { paid_at: -1 } };
    const payments = await paymentsCollection.find(query,options).toArray()
