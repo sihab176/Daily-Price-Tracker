@@ -61,7 +61,7 @@ async function run() {
     const paymentsCollection= db.collection("payments")
     
   try {
-     await client.connect();
+    //  await client.connect();
 
      // jwt route
   app.post('/jwt', async (req, res) => {
@@ -180,25 +180,57 @@ async function run() {
      }) 
 
    // get all product ==========>
-    app.get("/allProducts",async(req,res)=>{
-      const {status,sort,date} = req.query
+    app.get("/allTrendPrice",async(req,res)=>{
+      const {status} = req.query
       const query = { status: status || "approved" };
-      const sortDate= sort === "desc"  ? 1 : -1
-      // query.data =date
-      const result = await productCollection.find(query).sort({ pricePerUnit : sortDate}).toArray()
-      
-      // console.log(result ,"result");
 
-      if(date){
-         const filterResult= result.filter(singleData=> singleData.date == date )
-         return res.send(filterResult)
-       
-        
-      }
-      else{
-        return res.send(result)
-      }
+      const result = await productCollection.find(query).toArray()
+     
+      res.send(result)
+      
+
     })
+
+    //? ======================== test ===================>
+ app.get("/allProducts", async (req, res) => {
+  const { status, sort, date, page = 1, limit = 6 } = req.query;
+  const query = { status: status || "approved" };
+  const sortDate = sort === "desc" ? 1 : -1;
+  
+  // Convert page and limit to numbers
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get total count of products
+  const total = await productCollection.countDocuments(query);
+
+  let result;
+  if (date) {
+    // If date filter is applied
+    result = await productCollection.find(query)
+      .sort({ pricePerUnit: sortDate })
+      .toArray();
+    const filterResult = result.filter(singleData => singleData.date == date);
+    return res.send({
+      products: filterResult.slice(skip, skip + limitNum),
+      total: filterResult.length
+    });
+  } else {
+    // Normal query with pagination
+    result = await productCollection.find(query)
+      .sort({ pricePerUnit: sortDate })
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
+    return res.send({ products: result, total });
+  }
+});
+
+
+
+
+
   //TODO : ===================== ADMIN ======================================>
 // Get all products (for admin)
   app.get("/admin/allProduct", async (req, res) => {
@@ -332,8 +364,9 @@ app.put("/advertisements/:id", async (req, res) => {
     res.send(result)
   })
   // get all advertisement for home page 
-  app.get("/advertisements/all",async(req,res)=>{
+  app.get("/advertisements/allProduct",async(req,res)=>{
     const {status} = req.query
+    // console.log(status);
     const query = { status: status || "approved" };
     const result= await advertisementsCollection.find(query).toArray()
     res.send(result)
@@ -384,24 +417,21 @@ app.put("/advertisements/:id", async (req, res) => {
 
 // ! ============================== watch List ============================>
 // get  watch List ===========>
-app.get("/watchlist",async(req,res)=>{
+app.get("/watchList/manage",async(req,res)=>{
   const {email}= req.query
- 
+//  console.log(email , "email");
   const result= await watchListCollection.find({userEmail:email}).toArray()
   res.send(result)
 })
 
 // post watch List ============>
-app.post("/watchlist",async(req,res)=>{
+app.post("/watchList",async(req,res)=>{
    const data= req.body
   // console.log(data);
    const query= data.productId
   
    const findData= await watchListCollection.findOne({productId :query})
   
-    if(findData){
-   return res.status(200).send({message: "already exist"})
- }
 const result = await watchListCollection.insertOne(data)
   res.send(result)
 })
@@ -481,8 +511,8 @@ app.post('/create-payment-intent',async(req,res)=>{
 
 
 // todo: =================================================================================================>
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
   }
