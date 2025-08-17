@@ -98,35 +98,32 @@ async function run() {
         res.send(result)
      })
   // user update status =====>
-    app.patch("/users/:id", async (req, res) => {
+
+  app.patch("/users/:id", async (req, res) => {
   const id = req.params.id;
-  const { role } = req.body; 
+  const { role } = req.body;
+  const filter = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: { role },
+  };
+  const result = await userCollection.updateOne(filter, updateDoc);
+  res.send(result); 
+});
 
-  // Validate input
-  if (!role || !["Admin", "Vendor", "user"].includes(role)) {
-    return res.status(400).json({ error: "Invalid role" });
-  }
-
+app.get('/allUser', async (req, res) => {
   try {
-    const result = await userCollection.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          role: role,
-          last_updated: new Date() // Optional: Track when role was changed
-        }
-      }
-    );
-    
-
-   
-
-    res.status(200).json({ success: true, updatedRole: role });
+    const count = await userCollection.countDocuments();
+    res.send({ totalUsers: count });
   } catch (error) {
-    console.error("Update error:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong" });
   }
-     });
+});
+
+
+
+
+
       //Get user role by email ================>
    app.get('/users/:email/role', async (req, res) => {
             try {
@@ -226,6 +223,16 @@ async function run() {
     return res.send({ products: result, total });
   }
 });
+
+app.get('/productLength',async(req,res)=>{
+    try {
+    const count = await productCollection.countDocuments();
+    res.send({ totalProduct: count });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong" });
+  }
+})
 
 
 
@@ -371,6 +378,17 @@ app.put("/advertisements/:id", async (req, res) => {
     const result= await advertisementsCollection.find(query).toArray()
     res.send(result)
   })
+app.get('/advertisementLength',async(req,res)=>{
+    try {
+    const count = await advertisementsCollection.countDocuments();
+    res.send({ advertisement: count });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong" });
+  }
+})
+
+
 //! ============================== review collection =====================>
 // post reviews ======>
   app.post("/reviews",async(req,res)=>{
@@ -392,6 +410,16 @@ app.put("/advertisements/:id", async (req, res) => {
   }
 });
 
+app.get('/review', async (req, res) => {
+  try {
+    const result = await reviewCollection.find({rating :5}).limit(3).toArray() 
+    
+    res.send(result);
+  } catch (error) {
+    // console.error(error);
+    res.status(500).send({ message: "Something went wrong!" });
+  }
+});
 
 //  compare price with bar chart ==========>
   app.get("/compare-price", async (req, res)=>{
@@ -413,6 +441,16 @@ app.put("/advertisements/:id", async (req, res) => {
     }
     // console.log([findDate,findTheDate]);
     res.send([findDate,findTheDate])
+  })
+
+  app.get('/reviewLength',async(req,res)=>{
+        try {
+    const count = await reviewCollection.countDocuments();
+    res.send({ reviews: count });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong" });
+  }
   })
 
 // ! ============================== watch List ============================>
@@ -507,6 +545,11 @@ app.post('/create-payment-intent',async(req,res)=>{
   } catch(error){
      res.status(500).json({error : error.message})
   }
+})
+
+app.get('/allPayments',async(req,res)=>{
+  const result = await paymentsCollection.find().toArray()
+  res.send(result)
 })
 
 
